@@ -17,63 +17,62 @@ import java.net.URL;
 import java.util.Random;
 import java.awt.image.MemoryImageSource;
 
-class Bounceable {
-    static final int numcols = 10;
-    static final int topCounter = 3;
+class ColorEffect {
+    static final int color_number = 10;
+    static final int color_counter_default = 3;
     Color cols[];
-    int bounce_number, counter;
+    int bounce_number, color_counter;
     int base_color_of_red, base_color_of_green, base_color_of_blue;
     public Color scoreColor;
-    Bounceable() {
+    ColorEffect() {
 		bounce_number = 0;
-		counter = topCounter;
+		color_counter = color_counter_default;
+    }
+    public void bounced_effect() {
+		bounce_number = color_number-1;
     }
     public void setColor(Graphics g) {
 		g.setColor(cols[bounce_number]);
-		if (bounce_number > 0 && counter-- <= 0) {
+		if (bounce_number > 0 && color_counter-- <= 0) {
 		    bounce_number--;
-		    counter = topCounter;
+		    color_counter = color_counter_default;
 		}
-    }
-    public void bounceIt() {
-		bounce_number = numcols-1;
     }
     public void setColorBase(int rx, int gx, int bx) {
 		base_color_of_red = rx;
 		base_color_of_green = gx;
 		base_color_of_blue = bx;
 		int i;
-		cols = new Color[numcols];
-		for (i = 0; i != numcols; i++) {
-		    int v = 255*i/(numcols-1);
+		cols = new Color[color_number];
+		for (i = 0; i != color_number; i++) {
+		    int v = 255*i/(color_number-1);
 		    cols[i] = new Color(base_color_of_red*v, base_color_of_green*v, base_color_of_blue*v);
 		}
-		scoreColor = cols[numcols-1];
+		scoreColor = cols[color_number-1];
     }
 }
 
-class Paddle extends Bounceable {
-//this is test 
+class Paddle extends ColorEffect {
     int _x;
     int _oy;
-    int targetpos;
-    public int _score_x;
-    int _width, dir, rangemin, rangemax, _height;
+    int _target_x;
+    public int _score_y;
+    int _width, _distance, _left_start, _right_end, _height;
     public int score;
     public Paddle(int vp, int fp, int sp, int w) {
 		_x = vp;
 		_oy = fp;
-		_score_x = sp;
+		_score_y = sp;
 		_width = w;
 		_height = 8;
-		dir = 5;
-		targetpos = vp;
+		_distance = 5;
+		_target_x = vp;
     }
     public Rectangle getRect() {
 		return new Rectangle(_x, _oy-_height/2, _width, _height);
     }
     public void setTarget(int x) {
-		targetpos = x-_width/2;
+		_target_x = x-_width/2;
     }
     public int getX() {
 		return _x;
@@ -86,22 +85,28 @@ class Paddle extends Bounceable {
     }
     void move(int x) {
     	_x = x;
-		if (_x < rangemin)
-		    _x = rangemin;
-		if (_x > rangemax)
-		    _x = rangemax;
+		
+		if (_x < _left_start)
+		    _x = _left_start;
+		
+		if (_x > _right_end)
+		    _x = _right_end;
+
     }
     public void move() {
-		int d = targetpos - _x;
-		if (d < -dir)
-		    d = -dir;
-		if (d > dir)
-		    d = dir;
+		int d = _target_x - _x;
+
+		if (d < -_distance)
+		    d = -_distance;
+		
+		if (d > _distance)
+		    d = _distance;
+		
 		move(_x+d);
     }
     public void setRange(int mn, int mx) {
-		rangemin = mn;
-		rangemax = mx-_width+1;
+		_left_start = mn;
+		_right_end = mx-_width+1;
     }
     public void draw(Graphics g) {
         setColor(g);
@@ -109,18 +114,18 @@ class Paddle extends Bounceable {
     }
 }
 
-class Ball extends Bounceable {
+class Ball extends ColorEffect {
     Point _point, _start_point;
-    Pong game;
+    Pong _game;
     int dx, dy;
     int _size;
-    int xrangemin, xrangemax, yrangemin, yrangemax;
+    int x_left_start, x_right_end, y_top, y_bottom;
     public boolean inPlay;
     Random random;
     public Ball(Point ps, int s, Pong g) {
 		_point = ps;
 		_start_point = new Point(_point.x, _point.y);
-		game = g;
+		_game = g;
 		_size = s;
 		dx = 4;
 		dy = 6;
@@ -136,7 +141,7 @@ class Ball extends Bounceable {
 		dy = 6;
 		_point = new Point(_start_point.x, _start_point.y);
     }
-    int randBounce(int d) {
+    int random_bounce(int d) {
 		int dd = (d < 0) ? -1 : 1;
 		int n = random.nextInt();
 		if (n <= 0)
@@ -152,18 +157,18 @@ class Ball extends Bounceable {
 
 		boolean bounced = false;
 		
-		Rectangle xrg = new Rectangle(_point.x-_size/2, _point.y-_size/2, _size, _size);
-		Rectangle prg = paddle.getRect();
-		xrg.translate(dx, 0);
-		if (prg.intersects(xrg)) {
-		    dx = randBounce(dx);
+		Rectangle ball_rectangle = new Rectangle(_point.x-_size/2, _point.y-_size/2, _size, _size);
+		Rectangle paddle_rectangle = paddle.getRect();
+		ball_rectangle.translate(dx, 0);
+		if (paddle_rectangle.intersects(ball_rectangle)) {
+		    dx = random_bounce(dx);
 		    bounced = true;
 		}
 		Rectangle yrg = new Rectangle(_point.x-_size/2, _point.y-_size/2, _size, _size);
 		yrg.translate(dx, dy);
-		if (prg.intersects(yrg)) {
-		    dy = randBounce(dy);
-		    bounceIt();
+		if (paddle_rectangle.intersects(yrg)) {
+		    dy = random_bounce(dy);
+		    bounced_effect();
 		    bounced = true;
 		}
 		return bounced;
@@ -173,31 +178,31 @@ class Ball extends Bounceable {
 		    return;
 		_point.x += dx;
 		_point.y += dy;
-		if (_point.x < xrangemin) {
-		    _point.x = xrangemin;
+		if (_point.x < x_left_start) {
+		    _point.x = x_left_start;
 		    dx = -dx;
 		}
-		if (_point.x > xrangemax) {
-		    _point.x = xrangemax;
+		if (_point.x > x_right_end) {
+		    _point.x = x_right_end;
 		    dx = -dx;
 		}
-		if (_point.y < yrangemin) {
+		if (_point.y < y_top) {
 		    inPlay = false;
-		    game.updateScore(0);
+		    _game.addScore(0);
 		}
-		if (_point.y > yrangemax) {
+		if (_point.y > y_bottom) {
 		    inPlay = false;
-		    game.updateScore(1);
+		    _game.addScore(1);
 		}
     }
-    public int getPaddlePos() {
+    public int getPaddle_X() {
 		return _point.x;
     }
     public void setRange(int mnx, int mxx, int mny, int mxy) {
-		xrangemin = mnx+_size/2;
-		xrangemax = mxx-_size/2;
-		yrangemin = mny+_size/2;
-		yrangemax = mxy-_size/2;
+		x_left_start = mnx+_size/2;
+		x_right_end = mxx-_size/2;
+		y_top = mny+_size/2;
+		y_bottom = mxy-_size/2;
     }
     public void draw(Graphics g) {
 		if (!inPlay)
@@ -216,8 +221,8 @@ public class Pong extends Applet implements Runnable {
     Dimension screen;
     Font scoreFont, smallBannerFont, largeBannerFont;
     Image _image;
-    public static final int defaultPause = 100;
     int pause;
+    public static final int defaultPause = 100;
     public void init() {
 		
 		setBackground(Color.white);
@@ -249,7 +254,7 @@ public class Pong extends Applet implements Runnable {
 		smallBannerFont = new Font(font_name, Font.BOLD, 16);
 
     }
-    public void updateScore(int which) {
+    public void addScore(int which) {
 		paddles[1-which].score++;
     }
     public void run() {
@@ -265,14 +270,18 @@ public class Pong extends Applet implements Runnable {
 		}
     }
     public void step() {
-		paddles[1].setTarget(ball.getPaddlePos());
+		paddles[1].setTarget(ball.getPaddle_X());
 		paddles[0].move();
+		
 		if (ball.inPlay)
 		    paddles[1].move();
+
 		if (ball.bounce(paddles[0]))
-		    paddles[0].bounceIt();
+		    paddles[0].bounced_effect();
+		
 		if (ball.bounce(paddles[1]))
-		    paddles[1].bounceIt();
+		    paddles[1].bounced_effect();
+		
 		ball.move();
     }
     public void drawCenterString(Graphics g, FontMetrics fm, String str, int ypos) {
@@ -301,14 +310,13 @@ public class Pong extends Applet implements Runnable {
 		g.setColor(getForeground());
 		if (!ball.inPlay) {
 		    g.setFont(scoreFont);
-		    FontMetrics fm = g.getFontMetrics();
+		    FontMetrics fontMetrics = g.getFontMetrics();
 		    if (paddles[0].score == 0 && paddles[1].score == 0)
 				drawBanner(g);
 		    else
 				for (int i = 0; i != 2; i++) {
-				    String score = Integer.toString(paddles[i].score);
 				    g.setColor(paddles[i].scoreColor);
-				    drawCenterString(g, fm, score, paddles[i]._score_x);
+				    drawCenterString(g, fontMetrics, Integer.toString(paddles[i].score), paddles[i]._score_y);
 				}
 		}
 		for (int i = 0; i != 2; i++)
