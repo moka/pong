@@ -17,42 +17,7 @@ import java.net.URL;
 import java.util.Random;
 import java.awt.image.MemoryImageSource;
 
-class ColorEffect {
-    static final int color_number = 10;
-    static final int color_counter_default = 3;
-    Color cols[];
-    int bounce_number, color_counter;
-    int base_color_of_red, base_color_of_green, base_color_of_blue;
-    public Color scoreColor;
-    ColorEffect() {
-		bounce_number = 0;
-		color_counter = color_counter_default;
-    }
-    public void bounced_effect() {
-		bounce_number = color_number-1;
-    }
-    public void setColor(Graphics g) {
-		g.setColor(cols[bounce_number]);
-		if (bounce_number > 0 && color_counter-- <= 0) {
-		    bounce_number--;
-		    color_counter = color_counter_default;
-		}
-    }
-    public void setColorBase(int rx, int gx, int bx) {
-		base_color_of_red = rx;
-		base_color_of_green = gx;
-		base_color_of_blue = bx;
-		int i;
-		cols = new Color[color_number];
-		for (i = 0; i != color_number; i++) {
-		    int v = 255*i/(color_number-1);
-		    cols[i] = new Color(base_color_of_red*v, base_color_of_green*v, base_color_of_blue*v);
-		}
-		scoreColor = cols[color_number-1];
-    }
-}
-
-class Paddle extends ColorEffect {
+class Paddle {
     int _x;
     int _oy;
     int _target_x;
@@ -109,12 +74,11 @@ class Paddle extends ColorEffect {
 		_right_end = mx-_width+1;
     }
     public void draw(Graphics g) {
-        setColor(g);
     	g.fillRect(_x, _oy-_height/2, _width, _height);
     }
 }
 
-class Ball extends ColorEffect {
+class Ball {
     Point _point, _start_point;
     Pong _game;
     int dx, dy;
@@ -131,7 +95,6 @@ class Ball extends ColorEffect {
 		dy = 6;
 		inPlay = false;
 		random = new Random();
-		setColorBase(1, 1, 0);
     }
     public void startPlay() {
 		if (inPlay)
@@ -168,7 +131,6 @@ class Ball extends ColorEffect {
 		yrg.translate(dx, dy);
 		if (paddle_rectangle.intersects(yrg)) {
 		    dy = random_bounce(dy);
-		    bounced_effect();
 		    bounced = true;
 		}
 		return bounced;
@@ -207,7 +169,6 @@ class Ball extends ColorEffect {
     public void draw(Graphics g) {
 		if (!inPlay)
 		    return;
-	        setColor(g);
 
 		g.fillOval(_point.x-_size/2, _point.y-_size/2, _size, _size);
     }
@@ -235,8 +196,6 @@ public class Pong extends Applet implements Runnable {
     	paddles[1] = new Paddle(d.width/2, d.height-40, d.height-120, 40);
 		paddles[0].setRange(0, d.width-1);
 		paddles[1].setRange(0, d.width-1);
-		paddles[0].setColorBase(1, 0, 0);
-		paddles[1].setColorBase(0, 0, 1);
 		
 		ball = new Ball(new Point(d.width/2, d.height/2), 9, this);
 		ball.setRange(0, d.width-1, 0, d.height-1);
@@ -276,11 +235,8 @@ public class Pong extends Applet implements Runnable {
 		if (ball.inPlay)
 		    paddles[1].move();
 
-		if (ball.bounce(paddles[0]))
-		    paddles[0].bounced_effect();
-		
-		if (ball.bounce(paddles[1]))
-		    paddles[1].bounced_effect();
+		if (ball.bounce(paddles[0])){}
+		if (ball.bounce(paddles[1])){}
 		
 		ball.move();
     }
@@ -315,7 +271,6 @@ public class Pong extends Applet implements Runnable {
 				drawBanner(g);
 		    else
 				for (int i = 0; i != 2; i++) {
-				    g.setColor(paddles[i].scoreColor);
 				    drawCenterString(g, fontMetrics, Integer.toString(paddles[i].score), paddles[i]._score_y);
 				}
 		}
