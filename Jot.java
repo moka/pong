@@ -1,17 +1,49 @@
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
+import gnu.getopt.Getopt;
 class Jot {
 		Joint joint;
+        List a = null;
 		Iterator i,ii;
 		public Jot(){
 			joint = new Joint("");
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			
 			while (true){
-                System.out.print(joint.getName()+":$");
+                System.out.print("#jot"+joint.getName()+":$");
                 try {
 					String s = br.readLine();
-					if (s.equals("ls")){
+					if (s.matches("^ls.*")){
+						boolean is_detail = false;
+						boolean is_all = false;
+						Getopt options = new Getopt("ls", s.split(" ") , "al");
+				        int c;
+				        while ( (c = options.getopt()) != -1) {
+				            switch (c) {
+				            case 'a':
+								is_all = true;
+				                break;
+				            case 'l':
+								is_detail = true;
+				                break;
+				            default:
+				            }
+				        }
+			            if (is_all){
+							a = Arrays.asList(joint.getClassObject().getMethods());												
+						}else{
+							a = Arrays.asList(joint.getClassObject().getDeclaredMethods());										
+						}
+						for (i = a.iterator(); i.hasNext();) {
+				            Method m = (Method)i.next();
+				            if (is_detail){
+					        	System.out.println(m.toString()); 
+							}else{
+					        	System.out.println(m.getName()); 
+							}
+				        }
+        			}else if (s.equals("classes")){
 						/*
 						List a = Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator")));
 				        for (i = a.iterator(); i.hasNext();) {
@@ -25,23 +57,18 @@ class Jot {
 						        }
 							}
 				        }
-*/
-				        for (i = joint.list().iterator(); i.hasNext();) {
-				            Method m = (Method)i.next();
-				        	System.out.println(m.getName()); //変更がList側にも反映
-				        }
+						*/
         			}else if (s.equals("show")){
 						System.out.println(joint.getName());
         			}else if (s.equals("cons")){
 				        for (i = joint.cons().iterator(); i.hasNext();) {
 				            Constructor c = (Constructor)i.next();
-				        	System.out.println(c.toString()); //変更がList側にも反映
+				        	System.out.println(c.toString()); 
 						}
         			}else if (s.equals("path")){
 						System.out.println(System.getProperty("java.class.path"));
         			}else if (s.equals("two")){
 						joint = new Joint("Test");
-        				joint.createObject();
 						System.out.println(joint.invoke());
 					}else if (s.equals("")){
 						System.out.println(joint.getName());
@@ -68,6 +95,9 @@ class Test{
 class Joint{
 	Class _class;
 	Object _object;
+	public Class getClassObject(){
+		return _class;
+	}
 	public Joint(String s,int i){}
 	public Joint(String s){
 		try{
@@ -78,10 +108,8 @@ class Joint{
 				_class = this.getClass();
 			}
 		}
-	}
-	public void createObject(){
 		try{
-			_object =_class.getConstructors()[0].newInstance(null);
+			_object =_class.newInstance();
 		}catch(Throwable th){
 		}
 	}
@@ -90,7 +118,6 @@ class Joint{
 		int i = 10;
 		Object params[] = {new Integer(i)};
 		try{
-			_object =_class.newInstance();
 			return _class.getDeclaredMethod("two",argTypes).invoke(_object,params);
 		}catch(Throwable th){
             System.out.println(th.toString());
