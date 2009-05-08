@@ -9,7 +9,10 @@ class Jot {
 	public Jot(){
         try {
 			joint = new Joint("");
-        	ConsoleReader reader = new ConsoleReader();
+        	ConsoleReader reader = new ConsoleReader(System.in, 
+        		new PrintWriter(
+        				new OutputStreamWriter(System.out,
+        						System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
     		reader.setBellEnabled(false);
 	        List completors = new LinkedList();
             completors.add(new SimpleCompletor(new String[] { "foo", "bar",
@@ -80,13 +83,21 @@ class Jot {
 				}else if (s.equals("exit")){
 					System.exit(0);
 				}else{	
-					int i = Integer.valueOf(s.split(" ")[1]).intValue();
-					Object params[] = {new Integer(i)};
-					System.out.println(joint.invoke(s.split(" ")[0],params));
+					//method name argments
+					ArrayList a = joint.search(s.split(" ")[0]);
+					if (a == null){
+						System.out.println("OK");
+					}else{
+						System.out.println("NG");
+					}					
+					//int i = Integer.valueOf(s.split(" ")[1]).intValue();
+					//Object params[] = {new Integer(i)};
+					//System.out.println(joint.invoke(s.split(" ")[0],params));
+
 				}	
 			}
 		}catch(Throwable t){
-		
+			System.out.println(t.toString());
 		}
 	}
     public static void main(String args[]) {
@@ -97,6 +108,9 @@ class Test{
 	public String two(int i){
 		return ""+i*2;
 	}
+	public String three(int i){
+		return ""+i*3;
+	}
 }
 class Joint{
 	Class _class;
@@ -105,6 +119,22 @@ class Joint{
 		return _class;
 	}
 	public Joint(String s,int i){}
+	public ArrayList  search(String method_name){
+		List a = Arrays.asList(_class.getDeclaredMethods());		
+		ArrayList  return_methods= new ArrayList();
+		Iterator i = null;
+		for (i = a.iterator(); i.hasNext();) {
+            Method m = (Method)i.next();
+			if (m.getName().equals(method_name)){
+				try{
+					return_methods.add(m);
+				}catch(Throwable t){
+					System.out.println(t.toString());
+				}
+			}
+		}
+		return return_methods;
+	}
 	public Joint(String s){
 		try{
 			ClassLoader classLoader = this.getClass().getClassLoader();
