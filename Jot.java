@@ -2,7 +2,6 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 import gnu.getopt.Getopt;
-import jline.*;
 
 class Jot {
 	Joint joint;List a = null;Iterator i,ii;String s=null;
@@ -81,22 +80,30 @@ class Jot {
 				}else{	
 					//method name argments
 					String[] args = s.split(" "); 
-					ArrayList a = joint.search(args[0]);
+		        	String method_name = args[0];
+					System.out.println(method_name); 
+					ArrayList a = joint.search(method_name);
 					if (a.size()>0){
 						for (i = a.iterator(); i.hasNext();) {
 				            Method m = (Method)i.next();
 				            Class[] c = m.getParameterTypes();
-				            if (c.length == a.size() - 1){
-								List aa = Arrays.asList(c);		
-								int count;
-								Object params = new Object[c.length]; 
+//				        	System.out.println(c.length); 
+//				        	System.out.println(a.size()); 
+				            if (c.length == args.length - 1){
+								//that means input parameter and method parameter numbers are the same
+				            	List aa = Arrays.asList(c);	
+								int count=0;
+								//Object params = new Object[c.length]; 
 								for (ii = aa.iterator(); ii.hasNext();) {
 						            count ++;
-									Class cc = (Method)i.next();
-									params[count] = cc.cast(args[count]);
-															            
-					            }
-					        	System.out.println(c.length); 
+									Class cc = (Class)ii.next();
+						        	System.out.println(cc.getName()); 
+									if (cc.getName().equals("String")){
+										Object o = cc.cast(1);
+									}
+					            }		
+					            Object params[] = {new String("10")};
+					        	System.out.println(joint.invoke(method_name,params)); 
 					        	System.out.println(m.toString()); 
 							}else{
 								System.out.println("no param");
@@ -120,8 +127,8 @@ class Jot {
     }
 }
 class Test{
-	public String two(int i){
-		return ""+i*2;
+	public String two(String i){
+		return ">>>"+i;
 	}
 	public String three(int i){
 		return ""+i*3;
@@ -177,7 +184,10 @@ class Joint{
 	}
 
 	public Object invoke(String method_name,Object params[]){
-		Class argTypes[] = { int.class };
+		Class[] argTypes = new Class[params.length];
+		for(int i=0;i<params.length;i++){
+			argTypes[i] = params[i].getClass();
+		}		
 		try{
 			return _class.getDeclaredMethod(method_name,argTypes).invoke(_object,params);
 		}catch(Throwable th){
