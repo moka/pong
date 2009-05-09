@@ -9,16 +9,12 @@ class Jot {
 	public Jot(){
         try {
 			joint = new Joint("");
-        	ConsoleReader reader = new ConsoleReader(System.in, 
-        		new PrintWriter(
-        				new OutputStreamWriter(System.out,
-        						System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
-    		reader.setBellEnabled(false);
-	        List completors = new LinkedList();
-            completors.add(new SimpleCompletor(new String[] { "foo", "bar",
-                    "baz" }));
-            reader.addCompletor(new ArgumentCompletor(completors));
-        	while ((s = reader.readLine("[jot]"+joint.getName()+":$")) != null) {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        	
+			while (true) {
+				String head = "[jot]"+joint.getName()+":$";
+				System.out.print(head);
+				String s = reader.readLine();
 				if (s.matches("^ls.*")){
 					boolean is_detail = false;
 					boolean is_all = false;
@@ -84,9 +80,28 @@ class Jot {
 					System.exit(0);
 				}else{	
 					//method name argments
-					ArrayList a = joint.search(s.split(" ")[0]);
-					if (a == null){
-						System.out.println("OK");
+					String[] args = s.split(" "); 
+					ArrayList a = joint.search(args[0]);
+					if (a.size()>0){
+						for (i = a.iterator(); i.hasNext();) {
+				            Method m = (Method)i.next();
+				            Class[] c = m.getParameterTypes();
+				            if (c.length == a.size() - 1){
+								List aa = Arrays.asList(c);		
+								int count;
+								Object params = new Object[c.length]; 
+								for (ii = aa.iterator(); ii.hasNext();) {
+						            count ++;
+									Class cc = (Method)i.next();
+									params[count] = cc.cast(args[count]);
+															            
+					            }
+					        	System.out.println(c.length); 
+					        	System.out.println(m.toString()); 
+							}else{
+								System.out.println("no param");
+							}
+				        }
 					}else{
 						System.out.println("NG");
 					}					
