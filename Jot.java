@@ -5,11 +5,25 @@ import gnu.getopt.Getopt;
 
 class Jot {
 	Joint joint;List a = null;Iterator i,ii;String s=null;
-	public Jot(){
+	public Jot(String in_args[]){
+		boolean is_stdin = false;
+		Getopt options = new Getopt("java Jot", in_args , "s");
+        int c;
+        while ( (c = options.getopt()) != -1) {
+            switch (c) {
+            case 's':
+				is_stdin = true;
+                System.out.println("stdin");
+				break;
+            default:
+            }
+        }
+
         try {
-			joint = new Joint("");
+			File f = new File(".config");
+			BufferedReader config_reader = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+			joint = new Joint(config_reader.readLine());
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        	
 			while (true) {
 				String head = "[jot]"+joint.getName()+":$";
 				System.out.print(head);
@@ -17,8 +31,7 @@ class Jot {
 				if (s.matches("^ls.*")){
 					boolean is_detail = false;
 					boolean is_all = false;
-					Getopt options = new Getopt("ls", s.split(" ") , "al");
-			        int c;
+					options = new Getopt("ls", s.split(" ") , "al");
 			        while ( (c = options.getopt()) != -1) {
 			            switch (c) {
 			            case 'a':
@@ -43,6 +56,12 @@ class Jot {
 				        	System.out.println(m.getName()); 
 						}
 			        }
+    			}else if (s.equals("pac")){
+					a = Arrays.asList(Package.getPackages());
+					for (i = a.iterator(); i.hasNext();) {
+			            Package p = (Package)i.next();
+			        	System.out.println(p.getName()); 
+		            }					
     			}else if (s.equals("classes")){
 				/*
 				List a = Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator")));
@@ -65,8 +84,8 @@ class Jot {
 					System.out.println(joint.getName());
     			}else if (s.equals("cons")){
 			        for (i = joint.cons().iterator(); i.hasNext();) {
-			            Constructor c = (Constructor)i.next();
-			        	System.out.println(c.toString()); 
+			            Constructor cons = (Constructor)i.next();
+			        	System.out.println(cons.toString()); 
 					}
     			}else if (s.equals("path")){
 					System.out.println(System.getProperty("java.class.path"));
@@ -76,6 +95,26 @@ class Jot {
 				}else if (s.equals("")){
 					System.out.println(joint.getName());
 				}else if (s.equals("exit")){
+					File file = new File(".config");
+					BufferedWriter bw = null;
+					if(!file.exists()){
+						file.createNewFile();
+					}
+					try {
+						bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+						bw.write(joint.getName(), 0, joint.getName().length());
+						bw.newLine();
+					} catch (IOException e) {
+						System.out.println(e.toString());
+					} finally {
+					  try {
+					    if (bw != null) {
+					      bw.close();
+					    }
+					  } catch (IOException e) {
+						System.out.println(e.toString());
+					  }
+					}
 					System.exit(0);
 				}else{	
 					//method name argments
@@ -86,23 +125,20 @@ class Jot {
 					if (a.size()>0){
 						for (i = a.iterator(); i.hasNext();) {
 				            Method m = (Method)i.next();
-				            Class[] c = m.getParameterTypes();
+				            Class[] classes = m.getParameterTypes();
 //				        	System.out.println(c.length); 
 //				        	System.out.println(a.size()); 
-				            if (c.length == args.length - 1){
+				            if (classes.length == args.length - 1){
 								//that means input parameter and method parameter numbers are the same
-				            	List aa = Arrays.asList(c);	
+				            	List aa = Arrays.asList(classes);	
 								int count=0;
-								//Object params = new Object[c.length]; 
+								Object[] params = new Object[classes.length]; 
 								for (ii = aa.iterator(); ii.hasNext();) {
 						            count ++;
 									Class cc = (Class)ii.next();
 						        	System.out.println(cc.getName()); 
-									if (cc.getName().equals("String")){
-										Object o = cc.cast(1);
-									}
+									params[count-1] = args[count];
 					            }		
-					            Object params[] = {new String("10")};
 					        	System.out.println(joint.invoke(method_name,params)); 
 					        	System.out.println(m.toString()); 
 							}else{
@@ -123,7 +159,7 @@ class Jot {
 		}
 	}
     public static void main(String args[]) {
-		new Jot();
+		new Jot(args);
     }
 }
 class Test{
