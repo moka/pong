@@ -21,8 +21,12 @@ class Jot {
 
         try {
 			File f = new File(".config");
-			BufferedReader config_reader = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-			joint = new Joint(config_reader.readLine());
+			if (f.exists()){
+				BufferedReader config_reader = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+				joint = new Joint(config_reader.readLine());
+			}else{
+				joint = new Joint("");
+			}
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 			while (true) {
 				String head = "[jot]"+joint.getName()+":$";
@@ -58,10 +62,15 @@ class Jot {
 			        }
     			}else if (s.equals("pac")){
 					a = Arrays.asList(Package.getPackages());
+					TreeSet set = new TreeSet();
 					for (i = a.iterator(); i.hasNext();) {
-			            Package p = (Package)i.next();
-			        	System.out.println(p.getName()); 
+		            	Package p = (Package)i.next();
+		        		set.add(p.getName()); 
 		            }					
+					//Collections.sort(a);
+					for (i = set.iterator(); i.hasNext();) {
+		        		System.out.println(i.next()); 
+					}					
     			}else if (s.equals("classes")){
 				/*
 				List a = Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator")));
