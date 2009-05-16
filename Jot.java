@@ -1,31 +1,33 @@
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
-import gnu.getopt.Getopt;
-import jline.*;
- 
+//import gnu.getopt.Getopt;
+//import jline.*;
 class Jot {
 	Joint joint;List a = null;Iterator i,ii;
 	static final String _config_file_name = ".config";
 	public Jot(String in_args[]) throws Throwable{
 			String s="";
 			//config file create
-			if(!new File(this._config_file_name).exists()){new File(this._config_file_name).createNewFile();}
+			String filename = this._config_file_name;
+			if(!new File(filename).exists()){new File(filename).createNewFile();}
 
 			//java option
-			int c; Getopt options = new Getopt("java Jot", in_args , "s");
+			int c; gnu.getopt.Getopt options = new gnu.getopt.Getopt("java Jot", in_args , "s");
 	        while ( (c = options.getopt()) != -1) {if (c == 's'){System.out.println("stdin");}}
 
 			//java env
-			if (new File(".config").exists()){joint = new Joint(new BufferedReader(new InputStreamReader(new FileInputStream(new File(".config")))).readLine());}else{joint = new Joint("");}
+			filename = this._config_file_name;
+			if (new File(filename).exists()){joint = new Joint(new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename)))).readLine());}else{joint = new Joint("");}
 
 			//main loop
 	    	if (System.console() != null) {	
 	    		//stdin is from keyboard
-				ConsoleReader reader = new ConsoleReader(System.in,new PrintWriter(new OutputStreamWriter(System.out,System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
-		        reader.addCompletor(new ArgumentCompletor(new SimpleCompletor(new String[] { "foo", "bar","baz" })));
+				jline.ConsoleReader reader = new jline.ConsoleReader(System.in,new PrintWriter(new OutputStreamWriter(
+						System.out,System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
 				while ((s = reader.readLine("[jot]"+joint.getName()+":$")) != null) {
-					Jot_command(s);
+			        reader.addCompletor(new jline.ArgumentCompletor(new jline.SimpleCompletor(new String[] { "foo", "bar","baz" })));
+					this.Jot_command(s);
 				}
 		   }else{
 		   		//stdin is from pipe	   		
@@ -33,7 +35,7 @@ class Jot {
 				while ((s = reader.readLine()) != null) {
 					String head = "[jot]"+joint.getName()+":$";
 					System.out.print(head);
-					Jot_command(s);
+					this.Jot_command(s);
 				}
 		   }
 	}
@@ -62,8 +64,10 @@ class Jot {
 		}else if (s.equals("")){
 			System.out.println(joint.getName());
 		}else if (s.equals("exit")){
-			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this._config_file_name))));
-			bw.write(joint.getName(), 0, joint.getName().length());
+			String filename = this._config_file_name;
+			String ss =	joint.getName();		
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(filename))));
+			bw.write(ss, 0, ss.length());
 			bw.newLine();
 	        bw.close();
 			System.exit(0);
@@ -77,8 +81,6 @@ class Jot {
 				for (i = a.iterator(); i.hasNext();) {
 		            Method m = (Method)i.next();
 		            Class[] classes = m.getParameterTypes();
-//				        	System.out.println(c.length); 
-//				        	System.out.println(a.size()); 
 		            if (classes.length == args.length - 1){
 						//that means input parameter and method parameter numbers are the same
 		            	List aa = Arrays.asList(classes);	
@@ -109,7 +111,7 @@ class Jot {
 		boolean is_detail = false;
 		boolean is_all = false;
 		int c;
-		Getopt options = new Getopt("ls", s.split(" ") , "al");
+		gnu.getopt.Getopt options = new gnu.getopt.Getopt("ls", s.split(" ") , "al");
         while ( (c = options.getopt()) != -1) {
             switch (c) {
             case 'a':
