@@ -1,43 +1,53 @@
+
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
+//import java.lang.reflect.*;
 //import gnu.getopt.Getopt;
 //import jline.*;
 class Jot {
-	Joint joint;List a = null;Iterator i,ii;
+	Joint _joint;
 	static final String _config_file_name = ".config";
 	public Jot(String in_args[]) throws Throwable{
-			String s="";
-			//config file create
-			String filename = this._config_file_name;
-			if(!new File(filename).exists()){new File(filename).createNewFile();}
+		//config file create
+		String filename = this._config_file_name;
+		if(!new File(filename).exists()){new File(filename).createNewFile();}
+		//java env
+		filename = this._config_file_name;
+		if (new File(filename).exists()){_joint = new Joint(new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename)))).readLine());}else{_joint = new Joint("");}
+		//java option
+		int c; 
+		String[] args = in_args;
+		gnu.getopt.Getopt options = new gnu.getopt.Getopt("java Jot", args , "s");
+        while ( (c = options.getopt()) != -1) {if (c == 's'){System.out.println("stdin");}}
 
-			//java option
-			int c; gnu.getopt.Getopt options = new gnu.getopt.Getopt("java Jot", in_args , "s");
-	        while ( (c = options.getopt()) != -1) {if (c == 's'){System.out.println("stdin");}}
+		args = in_args;
+		if (args.length>0){
+			//command line mode, operate one command then exit
+			//join args
+	    	StringBuffer buf = new StringBuffer();for (String sss: args) {if (buf.length()>0) {buf.append(" ");}buf.append(sss);}
+			this.Jot_command(buf.toString());
+			System.exit(0);
+		}
 
-			//java env
-			filename = this._config_file_name;
-			if (new File(filename).exists()){joint = new Joint(new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename)))).readLine());}else{joint = new Joint("");}
-
-			//main loop
-	    	if (System.console() != null) {	
-	    		//stdin is from keyboard
-				jline.ConsoleReader reader = new jline.ConsoleReader(System.in,new PrintWriter(new OutputStreamWriter(
-						System.out,System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
-				while ((s = reader.readLine("[jot]"+joint.getName()+":$")) != null) {
-			        reader.addCompletor(new jline.ArgumentCompletor(new jline.SimpleCompletor(new String[] { "foo", "bar","baz" })));
-					this.Jot_command(s);
-				}
-		   }else{
-		   		//stdin is from pipe	   		
-				BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-				while ((s = reader.readLine()) != null) {
-					String head = "[jot]"+joint.getName()+":$";
-					System.out.print(head);
-					this.Jot_command(s);
-				}
-		   }
+		//main loop for stdin
+		String s="";
+    	if (System.console() != null) {	
+    		//stdin is from keyboard
+			jline.ConsoleReader reader = new jline.ConsoleReader(System.in,new PrintWriter(new OutputStreamWriter(
+					System.out,System.getProperty("jline.WindowsTerminal.output.encoding",System.getProperty("file.encoding")))));
+			while ((s = reader.readLine("[jot]"+_joint.getName()+":$")) != null) {
+		        reader.addCompletor(new jline.ArgumentCompletor(new jline.SimpleCompletor(new String[] { "foo", "bar","baz" })));
+				this.Jot_command(s);
+			}
+	   }else{
+	   		//stdin is from pipe	   		
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+			while ((s = reader.readLine()) != null) {
+				String head = "[jot]"+_joint.getName()+":$";
+				System.out.print(head);
+				this.Jot_command(s);
+			}
+	   }
 	}
 	private void Jot_command(String s) throws Throwable{
 		if (s.matches("^ls.*")){
@@ -47,25 +57,25 @@ class Jot {
 		}else if (s.equals("classes")){
 			Jot_command_classes(s);
 		}else if (s.matches("^cd.*")){
-			joint = new Joint(s.split(" ")[1]);
-			System.out.println(joint.getName());
+			_joint = new Joint(s.split(" ")[1]);
+			System.out.println(_joint.getName());
 		}else if (s.equals("show")){
-			System.out.println(joint.getName());
+			System.out.println(_joint.getName());
 		}else if (s.equals("cons")){
-	        for (i = joint.cons().iterator(); i.hasNext();) {
-	            Constructor cons = (Constructor)i.next();
+	        for (Iterator<java.lang.reflect.Constructor> i = _joint.cons().iterator(); i.hasNext();) {
+	            java.lang.reflect.Constructor cons = i.next();
 	        	System.out.println(cons.toString()); 
 			}
 		}else if (s.equals("path")){
 			System.out.println(System.getProperty("java.class.path"));
 		}else if (s.equals("two2")){
-			joint = new Joint("Test");
-			System.out.println(joint.invoke());
+			_joint = new Joint("Test");
+			System.out.println(_joint.invoke());
 		}else if (s.equals("")){
-			System.out.println(joint.getName());
+			System.out.println(_joint.getName());
 		}else if (s.equals("exit")){
 			String filename = this._config_file_name;
-			String ss =	joint.getName();		
+			String ss =	_joint.getName();		
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(filename))));
 			bw.write(ss, 0, ss.length());
 			bw.newLine();
@@ -76,23 +86,23 @@ class Jot {
 			String[] args = s.split(" "); 
         	String method_name = args[0];
 			System.out.println(method_name); 
-			ArrayList a = joint.search(method_name);
+			ArrayList a = _joint.search(method_name);
 			if (a.size()>0){
-				for (i = a.iterator(); i.hasNext();) {
-		            Method m = (Method)i.next();
+				for (Iterator<java.lang.reflect.Method> i = a.iterator(); i.hasNext();) {
+		            java.lang.reflect.Method m = i.next();
 		            Class[] classes = m.getParameterTypes();
 		            if (classes.length == args.length - 1){
 						//that means input parameter and method parameter numbers are the same
-		            	List aa = Arrays.asList(classes);	
+		            	List<Class> aa = Arrays.asList(classes);	
 						int count=0;
 						Object[] params = new Object[classes.length]; 
-						for (ii = aa.iterator(); ii.hasNext();) {
+						for (Iterator<Class>ii = aa.iterator(); ii.hasNext();) {
 				            count ++;
-							Class cc = (Class)ii.next();
+							Class cc = ii.next();
 				        	System.out.println(cc.getName()); 
 							params[count-1] = args[count];
 			            }		
-			        	System.out.println(joint.invoke(method_name,params)); 
+			        	System.out.println(_joint.invoke(method_name,params)); 
 			        	System.out.println(m.toString()); 
 					}else{
 						System.out.println("no param");
@@ -103,8 +113,7 @@ class Jot {
 			}					
 			//int i = Integer.valueOf(s.split(" ")[1]).intValue();
 			//Object params[] = {new Integer(i)};
-			//System.out.println(joint.invoke(s.split(" ")[0],params));
-
+			//System.out.println(_joint.invoke(s.split(" ")[0],params));
 		}	
 	}	
 	public void Jot_command_ls(String s){
@@ -123,13 +132,15 @@ class Jot {
             default:
             }
         }
+
+        List<java.lang.reflect.Method> a;
         if (is_all){
-			a = Arrays.asList(joint.getClassObject().getMethods());												
+			a = Arrays.asList(_joint.getClassObject().getMethods());												
 		}else{
-			a = Arrays.asList(joint.getClassObject().getDeclaredMethods());										
+			a = Arrays.asList(_joint.getClassObject().getDeclaredMethods());										
 		}
-		for (i = a.iterator(); i.hasNext();) {
-            Method m = (Method)i.next();
+		for (Iterator<java.lang.reflect.Method>i = a.iterator(); i.hasNext();) {
+            java.lang.reflect.Method m = (java.lang.reflect.Method)i.next();
             if (is_detail){
 	        	System.out.println(m.toString()); 
 			}else{
@@ -138,24 +149,24 @@ class Jot {
         }
 	}
 	public void Jot_command_pac(String s){
-		a = Arrays.asList(Package.getPackages());
+		List<Package> a = Arrays.asList(Package.getPackages());
 		TreeSet set = new TreeSet();
-		for (i = a.iterator(); i.hasNext();) {
-        	Package p = (Package)i.next();
+		for (Iterator<Package>i = a.iterator(); i.hasNext();) {
+        	Package p = i.next();
     		set.add(p.getName()); 
         }					
-		for (i = set.iterator(); i.hasNext();) {
+		for (Iterator<String>i = set.iterator(); i.hasNext();) {
     		System.out.println(i.next()); 
 		}					
 	}
 	public void Jot_command_classes(String s){
-		List a = Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator")));
-        for (i = a.iterator(); i.hasNext();) {
-            String ss = (String)i.next();
+		List<String> a = Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator")));
+        for (Iterator<String> i = a.iterator(); i.hasNext();) {
+            String ss = i.next();
 			File f = new File(ss);
 			if (f.isDirectory()){
-				List aa  = Arrays.asList(f.list());
-		        for (ii = aa.iterator(); ii.hasNext();) {
+				List<String> aa  = Arrays.asList(f.list());
+		        for (Iterator<String> ii = aa.iterator(); ii.hasNext();) {
 		            String sss = (String)ii.next();
 					System.out.println(sss);					        	
 		        }
@@ -182,12 +193,11 @@ class Joint{
 		return _class;
 	}
 	public Joint(String s,int i){}
-	public ArrayList  search(String method_name){
-		List a = Arrays.asList(_class.getDeclaredMethods());		
-		ArrayList  return_methods= new ArrayList();
-		Iterator i = null;
-		for (i = a.iterator(); i.hasNext();) {
-            Method m = (Method)i.next();
+	public ArrayList<java.lang.reflect.Method>  search(String method_name){
+		List<java.lang.reflect.Method> a = Arrays.asList(_class.getDeclaredMethods());		
+		ArrayList<java.lang.reflect.Method>   return_methods= new ArrayList();
+		for (Iterator<java.lang.reflect.Method>i = a.iterator(); i.hasNext();) {
+            java.lang.reflect.Method m = i.next();
 			if (m.getName().equals(method_name)){
 				try{
 					return_methods.add(m);
@@ -243,7 +253,7 @@ class Joint{
 	public List list(){
 		return java.util.Arrays.asList(_class.getDeclaredMethods());		
 	}
-	public List cons(){
+	public List<java.lang.reflect.Constructor> cons(){
 		return java.util.Arrays.asList(_class.getConstructors());		
 	}
 
