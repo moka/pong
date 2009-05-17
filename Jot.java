@@ -66,7 +66,8 @@ class Jot {
 	            java.lang.reflect.Constructor cons = i.next();
 	        	System.out.println(cons.toString()); 
 			}
-		}else if (s.equals("objects")){
+		}else if (s.equals("object")){
+			System.out.println(_joint.getObjectName());
 		}else if (s.equals("pwd")){
 			System.out.println(_joint.getName());
 		}else if (s.equals("path")){
@@ -264,7 +265,9 @@ class Joint{
 			return null;
 		}
 	}
-
+    public String getObjectName(){
+		return _object.toString();
+	}
     public String getName(){
 		return _class.getName();
 	}
