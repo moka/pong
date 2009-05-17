@@ -19,7 +19,7 @@ class Jot {
 		String[] args = in_args;
 		gnu.getopt.Getopt options = new gnu.getopt.Getopt("java Jot", args , "s");
         while ( (c = options.getopt()) != -1) {if (c == 's'){System.out.println("stdin");}}
-
+		//
 		args = in_args;
 		if (args.length>0){
 			//command line mode, operate one command then exit
@@ -43,8 +43,8 @@ class Jot {
 	   		//stdin is from pipe	   		
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 			while ((s = reader.readLine()) != null) {
-				String head = "[jot]"+_joint.getName()+":$";
-				System.out.print(head);
+				//String head = "[jot]"+_joint.getName()+":$";
+				//System.out.print(head);
 				this.Jot_command(s);
 			}
 	   }
@@ -66,6 +66,9 @@ class Jot {
 	            java.lang.reflect.Constructor cons = i.next();
 	        	System.out.println(cons.toString()); 
 			}
+		}else if (s.equals("objects")){
+		}else if (s.equals("pwd")){
+			System.out.println(_joint.getName());
 		}else if (s.equals("path")){
 			System.out.println(System.getProperty("java.class.path"));
 		}else if (s.equals("two2")){
@@ -81,16 +84,24 @@ class Jot {
 			bw.newLine();
 	        bw.close();
 			System.exit(0);
+		}else if (s.matches("^call.*")){
+			Jot_command_call(s);
 		}else{	
 			//method name argments
-			String[] args = s.split(" "); 
-        	String method_name = args[0];
-			System.out.println(method_name); 
-			ArrayList a = _joint.search(method_name);
-			if (a.size()>0){
-				for (Iterator<java.lang.reflect.Method> i = a.iterator(); i.hasNext();) {
-		            java.lang.reflect.Method m = i.next();
-		            Class[] classes = m.getParameterTypes();
+			Jot_command_call(s);
+		}	
+	}	
+	public void Jot_command_call(String s)throws Throwable{
+		String[] args = s.split(" "); 
+    	String method_name = args[0];
+		ArrayList<java.lang.reflect.Method> a = _joint.search(method_name);
+		if (a.size()>0){
+			for (Iterator<java.lang.reflect.Method> i = a.iterator(); i.hasNext();) {
+	            java.lang.reflect.Method m = i.next();
+	            Class[] classes = m.getParameterTypes();
+	            if (classes.length ==0){
+		        	System.out.println(_joint.invoke(method_name)); 
+				}else{	            	
 		            if (classes.length == args.length - 1){
 						//that means input parameter and method parameter numbers are the same
 		            	List<Class> aa = Arrays.asList(classes);	
@@ -99,23 +110,24 @@ class Jot {
 						for (Iterator<Class>ii = aa.iterator(); ii.hasNext();) {
 				            count ++;
 							Class cc = ii.next();
-				        	System.out.println(cc.getName()); 
+				        	//System.out.println(cc.getName()); 
 							params[count-1] = args[count];
 			            }		
 			        	System.out.println(_joint.invoke(method_name,params)); 
-			        	System.out.println(m.toString()); 
 					}else{
 						System.out.println("no param");
 					}
-		        }
-			}else{
-				System.out.println("NG");
-			}					
-			//int i = Integer.valueOf(s.split(" ")[1]).intValue();
-			//Object params[] = {new Integer(i)};
-			//System.out.println(_joint.invoke(s.split(" ")[0],params));
-		}	
-	}	
+	            }
+
+	        }
+		}else{
+			System.out.println("NG");
+		}					
+		//int i = Integer.valueOf(s.split(" ")[1]).intValue();
+		//Object params[] = {new Integer(i)};
+		//System.out.println(_joint.invoke(s.split(" ")[0],params));
+
+	}
 	public void Jot_command_ls(String s){
 		boolean is_detail = false;
 		boolean is_all = false;
@@ -185,6 +197,9 @@ class Test{
 	public String three(int i){
 		return ""+i*3;
 	}
+	public String fee(){
+		return "2222";
+	}
 }
 class Joint{
 	Class _class;
@@ -193,18 +208,12 @@ class Joint{
 		return _class;
 	}
 	public Joint(String s,int i){}
-	public ArrayList<java.lang.reflect.Method>  search(String method_name){
+	public ArrayList<java.lang.reflect.Method>  search(String method_name)throws Throwable{
 		List<java.lang.reflect.Method> a = Arrays.asList(_class.getDeclaredMethods());		
-		ArrayList<java.lang.reflect.Method>   return_methods= new ArrayList();
+		ArrayList<java.lang.reflect.Method> return_methods= new ArrayList();
 		for (Iterator<java.lang.reflect.Method>i = a.iterator(); i.hasNext();) {
             java.lang.reflect.Method m = i.next();
-			if (m.getName().equals(method_name)){
-				try{
-					return_methods.add(m);
-				}catch(Throwable t){
-					System.out.println(t.toString());
-				}
-			}
+			if (m.getName().equals(method_name)){return_methods.add(m);}
 		}
 		return return_methods;
 	}
@@ -230,6 +239,15 @@ class Joint{
 			return _class.getDeclaredMethod("two",argTypes).invoke(_object,params);
 		}catch(Throwable th){
             System.out.println(th.toString());
+			return null;
+		}
+	}
+	public Object invoke(String method_name){
+		try{
+			Class[] argTypes=null;Object params[]=null;
+			return _class.getMethod(method_name,argTypes).invoke(_object,params); 
+		 }catch(Throwable th){
+            System.out.println("eeeeh"+th.toString());
 			return null;
 		}
 	}
