@@ -5,7 +5,7 @@ import java.util.*;
 //import gnu.getopt.Getopt;
 //import jline.*;
 class Jot {
-	Joint _joint;
+	Joint _joint = new Joint();
 	static final String _config_file_name = ".config";
 	public Jot(String in_args[]) throws Throwable{
 		//config file create
@@ -13,7 +13,7 @@ class Jot {
 		if(!new File(filename).exists()){new File(filename).createNewFile();}
 		//java env
 		filename = this._config_file_name;
-		if (new File(filename).exists()){_joint = new Joint(new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename)))).readLine());}else{_joint = new Joint("");}
+		if (new File(filename).exists()){_joint.attachClass(new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename)))).readLine());}else{_joint.attachClass("");}
 		//java option
 		int c; 
 		String[] args = in_args;
@@ -57,7 +57,7 @@ class Jot {
 		}else if (s.equals("classes")){
 			Jot_command_classes(s);
 		}else if (s.matches("^cd.*")){
-			_joint = new Joint(s.split(" ")[1]);
+			_joint.attachClass(s.split(" ")[1]);
 			System.out.println(_joint.getName());
 		}else if (s.equals("show")){
 			System.out.println(_joint.getName());
@@ -66,6 +66,10 @@ class Jot {
 	            java.lang.reflect.Constructor cons = i.next();
 	        	System.out.println(cons.toString()); 
 			}
+		}else if (s.equals("save")){
+			_joint.save();
+		}else if (s.equals("objects")){
+			Jot_command_objects();
 		}else if (s.equals("object")){
 			System.out.println(_joint.getObjectName());
 		}else if (s.equals("pwd")){
@@ -73,7 +77,7 @@ class Jot {
 		}else if (s.equals("path")){
 			System.out.println(System.getProperty("java.class.path"));
 		}else if (s.equals("two2")){
-			_joint = new Joint("Test");
+			_joint.attachClass("Test");
 			System.out.println(_joint.invoke());
 		}else if (s.equals("")){
 			System.out.println(_joint.getName());
@@ -111,7 +115,6 @@ class Jot {
 						for (Iterator<Class>ii = aa.iterator(); ii.hasNext();) {
 				            count ++;
 							Class cc = ii.next();
-				        	//System.out.println(cc.getName()); 
 							params[count-1] = args[count];
 			            }		
 			        	System.out.println(_joint.invoke(method_name,params)); 
@@ -186,9 +189,14 @@ class Jot {
 			}
         }
 	}
-
+	public void Jot_command_objects(){
+		for (Iterator<Object> i = _joint.objects().iterator(); i.hasNext();) {
+			Object o = i.next();
+			System.out.println(o.toString()); 
+		}		
+	}
     public static void main(String args[]) {
-        try {new Jot(args);}catch(Throwable t){System.out.println(t.toString());}
+		try {new Jot(args);}catch(Throwable t){t.printStackTrace();}
     }
 }
 class Test{
@@ -203,12 +211,17 @@ class Test{
 	}
 }
 class Joint{
+
 	Class _class;
 	Object _object;
+	ArrayList <Object> _object_list = new ArrayList();
 	public Class getClassObject(){
 		return _class;
 	}
-	public Joint(String s,int i){}
+	public ArrayList<Object> objects(){
+		return _object_list;		
+	}
+	public Joint(){}
 	public ArrayList<java.lang.reflect.Method>  search(String method_name)throws Throwable{
 		List<java.lang.reflect.Method> a = Arrays.asList(_class.getDeclaredMethods());		
 		ArrayList<java.lang.reflect.Method> return_methods= new ArrayList();
@@ -218,23 +231,26 @@ class Joint{
 		}
 		return return_methods;
 	}
-	public Joint(String s){
+	public void attachClass(String s){
 		try{
 			ClassLoader classLoader = this.getClass().getClassLoader();
 			_class = classLoader.loadClass(s);
 		}catch(Throwable th){
+			System.out.println("load error:"+th.toString()+"("+s+")");
 			if (_class == null){
 				_class = this.getClass();
 			}
 		}
 		try{
 			_object =_class.newInstance();
+			_object_list.add(_object);
 		}catch(Throwable th){
+			th.printStackTrace();
 		}
 	}
 	public Object invoke(){
 		Class argTypes[] = { int.class };
-		int i = 10;
+		int i = 10; 
 		Object params[] = {new Integer(i)};
 		try{
 			return _class.getDeclaredMethod("two",argTypes).invoke(_object,params);
@@ -265,6 +281,25 @@ class Joint{
 			return null;
 		}
 	}
+	public void save(){
+		if(_object instanceof java.io.Serializable){
+		}else{
+			System.out.println("current object is not serializable");
+			return;
+		}
+		try {
+			SerializableObject object = new SerializableObject(_object);
+			ObjectOutputStream outObject = new ObjectOutputStream(new FileOutputStream("_current.obj"));
+			outObject.writeObject(_object);
+			outObject.close();
+		}catch(Throwable t){
+			t.printStackTrace();
+		}		
+	}
+	
+	
+	public void load(){
+	}	
     public String getObjectName(){
 		return _object.toString();
 	}
@@ -276,6 +311,12 @@ class Joint{
 	}
 	public List<java.lang.reflect.Constructor> cons(){
 		return java.util.Arrays.asList(_class.getConstructors());		
+	}
+	class SerializableObject implements Serializable {
+	  private Object _object;
+		public SerializableObject(Object in_object){
+			_object = in_object;
+		}
 	}
 
 }
